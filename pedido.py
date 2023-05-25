@@ -6,10 +6,10 @@ bot = telebot.TeleBot(TELEGRAM_TOKEN)
 usuarios = {}
 
 menu = {
-    "Tortilla de Harina": 10.00,
-    "Hamburguesa": 8.00,
-    "Churrasco": 12.00,
-    "Bebida": 2.00,
+    "Tortilla de Harina": 10,
+    "Hamburguesa": 8,
+    "Churrasco": 12,
+    "Bebida": 2,
     "Finalizar pedido": None
 }
 
