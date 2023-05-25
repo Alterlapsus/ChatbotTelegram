@@ -48,15 +48,15 @@ def mostrar_menu_pedido(chat_id):
         reply_markup=markup
     )
 
-def mostrar_detalle_pedido(chat_id):
-    datos_usuario = usuarios[chat_id]
-    texto = 'Detalle del pedido:\n\n'
-    texto += f'Nombre: {datos_usuario["nombre"]}\n'
-    texto += f'Edad: {datos_usuario["edad"]}\n'
-    texto += 'Pedido:\n'
-    for articulo, cantidad in datos_usuario["pedido"].items():
-        texto += f'- {articulo}: {cantidad}\n'
-    bot.send_message(chat_id, texto)
+# def mostrar_detalle_pedido(chat_id):
+#     datos_usuario = usuarios[chat_id]
+#     texto = 'Detalle del pedido:\n\n'
+#     texto += f'Nombre: {datos_usuario["nombre"]}\n'
+#     texto += f'Edad: {datos_usuario["edad"]}\n'
+#     texto += 'Pedido:\n'
+#     for articulo, cantidad in datos_usuario["pedido"].items():
+#         texto += f'- {articulo}: {cantidad}\n'
+#     bot.send_message(chat_id, texto)
 
 def mostrar_resumen_pedido(chat_id, message_id):
     datos_usuario = usuarios[chat_id]
@@ -70,7 +70,7 @@ def mostrar_resumen_pedido(chat_id, message_id):
         total += obtener_precio_unitario(articulo) * cantidad
     texto += f'\n<code> Total:</code> Q{int(total)}\n'
     bot.send_message(chat_id, texto, parse_mode="html")
-    mostrar_detalle_pedido(chat_id)
+    # mostrar_detalle_pedido(chat_id)
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
