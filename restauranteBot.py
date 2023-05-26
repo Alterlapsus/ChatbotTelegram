@@ -48,15 +48,15 @@ def callback_handler(call):
     elif data == "agregar_edad":
         agregar_edad(chat_id)
     elif data == "Finalizar pedido":
-        mostrar_resumen_pedido(chat_id, message_id)
+        mostrar_resumen_pedido(chat_id, message_id, usuarios[chat_id]["nombre"], usuarios[chat_id]["edad"])
         usuarios.pop(chat_id)
     elif data in menu:
         mostrar_submenu_pedido(chat_id, data)
     else:
         articulo, opcion = obtener_articulo_opcion(data)
         if articulo in menu and opcion in menu[articulo]:
-            if chat_id not in usuarios or "pedido" not in usuarios[chat_id]:
-                usuarios[chat_id] = {"nombre": "", "edad": "", "pedido": {}}
+            if "pedido" not in usuarios[chat_id]:
+                usuarios[chat_id]["pedido"] = {}
             if articulo in usuarios[chat_id]["pedido"]:
                 usuarios[chat_id]["pedido"][articulo][opcion] += 1
             else:
@@ -66,8 +66,8 @@ def callback_handler(call):
             mostrar_menu_pedido(chat_id, usuarios[chat_id].get("nombre"), usuarios[chat_id].get("edad"))
 
 
+
 def agregar_nombre(chat_id):
-    usuarios[chat_id] = {}  # Agregar el ID de chat al diccionario usuarios
     markup = ForceReply()
     msg = bot.send_message(chat_id, "¿Cómo te llamas?", reply_markup=markup)
     bot.register_next_step_handler(msg, guardar_nombre, chat_id)  # Pasamos 'chat_id' como argumento adicional
@@ -79,16 +79,21 @@ def agregar_edad(chat_id):
     bot.register_next_step_handler(msg, guardar_edad, chat_id)  # Pasamos 'chat_id' como argumento adicional
 
 
-def guardar_nombre(message, chat_id):  # Agregamos 'chat_id' como argumento adicional
+def guardar_nombre(message, chat_id):
     nombre = message.text
+    if chat_id not in usuarios:
+        usuarios[chat_id] = {}
     usuarios[chat_id]["nombre"] = nombre
-    agregar_edad(chat_id)  # No es necesario retornar 'nombre' aquí
+    agregar_edad(chat_id)
 
 
-def guardar_edad(message, chat_id):  # Agregamos 'chat_id' como argumento adicional
+def guardar_edad(message, chat_id):
     edad = message.text
+    if chat_id not in usuarios:
+        usuarios[chat_id] = {}
     usuarios[chat_id]["edad"] = edad
-    mostrar_menu_pedido(chat_id, usuarios[chat_id]["nombre"], usuarios[chat_id]["edad"])  # Pasamos 'nombre' y 'edad' como argumentos
+    mostrar_menu_pedido(chat_id, usuarios[chat_id]["nombre"], usuarios[chat_id]["edad"])
+
 
 
 def mostrar_menu_pedido(chat_id, nombre, edad):  # Agregamos 'nombre' y 'edad' como argumentos
@@ -126,15 +131,13 @@ def obtener_precio_unitario(articulo, opcion=None):
         return menu[articulo]
 
 
-def mostrar_resumen_pedido(chat_id, message_id):
+def mostrar_resumen_pedido(chat_id, message_id, nombre, edad):
     datos_usuario = usuarios.get(chat_id, {})
-    nombre = datos_usuario.get("nombre", "")
-    edad = datos_usuario.get("edad", "")
 
     if datos_usuario:
         texto = 'Resumen del pedido:\n\n'
-        texto += f'<code>Nombre:</code> {datos_usuario}\n'
-        texto += f'<code>Edad:</code> {datos_usuario}\n\n'
+        texto += f'<code>Nombre:</code> {nombre}\n'
+        texto += f'<code>Edad:</code> {edad}\n\n'
         texto += '<code>Pedido:</code>\n\n'
         total = 0
         for articulo, opciones in datos_usuario.get("pedido", {}).items():
@@ -145,7 +148,9 @@ def mostrar_resumen_pedido(chat_id, message_id):
                 texto += f'  {opcion} (Cantidad: {cantidad}) - Subtotal: Q{subtotal}\n'
                 total += subtotal
         texto += f'\n<code>Total:</code> Q{int(total)}\n'
+        texto += f'\n<code>Tu pedido ha sido solicitado:{nombre}</code>\n'
         bot.send_message(chat_id, texto, reply_to_message_id=message_id, parse_mode="html")
+
 
 
 
