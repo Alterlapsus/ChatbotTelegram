@@ -5,6 +5,8 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 usuarios = {}
+nombres_ingresados = []
+
 
 menu = {
     "Tortilla de Harina": {
@@ -28,13 +30,22 @@ menu = {
     "Finalizar pedido": None
 }
 
+card_images = {
+    "Logo restaurante": "logo_restaurante.jpg",
+    "Tortilla de Harina": "tortillaHarina.jpg",
+    "Hamburguesa": "hamburguesa.jpg",
+    "Churrasco": "churrasco.jpg",
+    "Bebida": "bebida.jpg",
+    "Menu":"menu.png"
+}
 
 @bot.message_handler(commands=["start", "help", "ayuda"])
 def cmd_start(message):
     markup = InlineKeyboardMarkup(row_width=2)
     markup.add(InlineKeyboardButton("Agregar nombre", callback_data="agregar_nombre"))
     markup.add(InlineKeyboardButton("Agregar edad", callback_data="agregar_edad"))
-    bot.send_message(message.chat.id, "Bienvenido al restaurante:\nUsa los botones para agregar tu nombre y edad.",
+    bot.send_photo(message.chat.id, open(card_images.get("Logo restaurante", "default.jpg"), "rb"))
+    bot.send_message(message.chat.id, "Bienvenido al BOT restaurante KALUSHA:\n Usa los botones para agregar tu nombre y edad.",
                      reply_markup=markup)
 
 
@@ -84,8 +95,9 @@ def guardar_nombre(message, chat_id):
     if chat_id not in usuarios:
         usuarios[chat_id] = {}
     usuarios[chat_id]["nombre"] = nombre
+    nombres_ingresados.append(chat_id)
     agregar_edad(chat_id)
-
+    
 
 def guardar_edad(message, chat_id):
     edad = message.text
@@ -103,9 +115,16 @@ def mostrar_menu_pedido(chat_id, nombre, edad):  # Agregamos 'nombre' y 'edad' c
             markup.add(InlineKeyboardButton(articulo, callback_data=articulo))
         else:
             markup.add(InlineKeyboardButton(articulo, callback_data=articulo))
+            
+         # Verificar si el ID de chat ya está en nombres_ingresados
+    if chat_id in nombres_ingresados:
+        mensaje_bienvenida = f"¡Bienvenido {nombre}! A continuación, te muestro las opciones del menú:"
+        bot.send_message(chat_id, mensaje_bienvenida)
+        nombres_ingresados.remove(chat_id)
+
     bot.send_photo(
         chat_id,
-        open("menu_card.jpg", "rb"),
+        open(card_images.get("Menu", "default.jpg"), "rb"),
         reply_markup=markup
     )
 
@@ -118,7 +137,7 @@ def mostrar_submenu_pedido(chat_id, articulo):
             markup.add(InlineKeyboardButton(f"{opcion} (Q{precio})", callback_data=f"{articulo}:{opcion}"))
         bot.send_photo(
             chat_id,
-            open("submenu_image.jpg", "rb"),
+            open(card_images.get(articulo, "default.jpg"), "rb"),
             caption=f"Elige una opción para {articulo}:",
             reply_markup=markup
         )
@@ -145,10 +164,10 @@ def mostrar_resumen_pedido(chat_id, message_id, nombre, edad):
             for opcion, cantidad in opciones.items():
                 precio_unitario = obtener_precio_unitario(articulo, opcion)
                 subtotal = precio_unitario * cantidad
-                texto += f'  {opcion} (Cantidad: {cantidad}) - Subtotal: Q{subtotal}\n'
+                texto += f'  {opcion} (Q{precio_unitario}): (Cantidad: {cantidad}) - Subtotal: Q{subtotal}\n'
                 total += subtotal
         texto += f'\n<code>Total:</code> Q{int(total)}\n'
-        texto += f'\n<code>Tu pedido ha sido solicitado:{nombre}</code>\n'
+        texto += f'\n<code>Tu pedido ha sido solicitado: {nombre}</code>\n'
         bot.send_message(chat_id, texto, reply_to_message_id=message_id, parse_mode="html")
 
 
