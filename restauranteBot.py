@@ -2,8 +2,11 @@ from config import *
 import telebot
 from telebot.types import ForceReply
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+import requests
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
+
+
 usuarios = {}
 nombres_ingresados = []
 
@@ -43,9 +46,9 @@ card_images = {
 def cmd_start(message):
     markup = InlineKeyboardMarkup(row_width=2)
     markup.add(InlineKeyboardButton("Agregar nombre", callback_data="agregar_nombre"))
-    markup.add(InlineKeyboardButton("Agregar edad", callback_data="agregar_edad"))
+    markup.add(InlineKeyboardButton("Agregar dirección", callback_data="agregar_direccion"))  # Cambio de "edad" a "dirección"
     bot.send_photo(message.chat.id, open(card_images.get("Logo restaurante", "default.jpg"), "rb"))
-    bot.send_message(message.chat.id, "Bienvenido al BOT restaurante KALUSHA:\n Usa los botones para agregar tu nombre y edad.",
+    bot.send_message(message.chat.id, "Bienvenido al BOT restaurante KALUSHA:\n Usa los botones para agregar tu nombre y dirección.",  # Cambio de "edad" a "dirección"
                      reply_markup=markup)
 
 
@@ -56,16 +59,16 @@ def callback_handler(call):
     data = call.data
     if data == "agregar_nombre":
         agregar_nombre(chat_id)
-    elif data == "agregar_edad":
-        agregar_edad(chat_id)
+    elif data == "agregar_direccion":
+        agregar_direccion(chat_id)  # Cambio de "edad" a "dirección"
     elif data == "Finalizar pedido":
         solicitar_metodo_pago(chat_id)  # Solicitar el método de pago al finalizar el pedido
     elif data.startswith("metodo_pago:"):
         metodo_pago = data.split(":")[1]
-        # Obtener nombre y edad del usuario
+        # Obtener nombre y dirección del usuario  # Cambio de "edad" a "dirección"
         nombre = usuarios[chat_id]["nombre"]
-        edad = usuarios[chat_id]["edad"]
-        mostrar_resumen_pedido(chat_id, message_id, nombre, edad, metodo_pago)
+        direccion = usuarios[chat_id]["direccion"]
+        mostrar_resumen_pedido(chat_id, message_id, nombre, direccion, metodo_pago)  # Cambio de "edad" a "dirección"
         usuarios.pop(chat_id)
     elif data in menu:
         mostrar_submenu_pedido(chat_id, data)
@@ -80,7 +83,7 @@ def callback_handler(call):
                 usuarios[chat_id]["pedido"][articulo] = {opcion: 1}
             bot.edit_message_reply_markup(chat_id, message_id, reply_markup=None)
             bot.send_message(chat_id, f"Has agregado {articulo} {opcion} al pedido.")
-            mostrar_menu_pedido(chat_id, usuarios[chat_id].get("nombre"), usuarios[chat_id].get("edad"))
+            mostrar_menu_pedido(chat_id, usuarios[chat_id].get("nombre"), usuarios[chat_id].get("direccion"))  # Cambio de "edad" a "dirección"
 
 
 def agregar_nombre(chat_id):
@@ -89,10 +92,10 @@ def agregar_nombre(chat_id):
     bot.register_next_step_handler(msg, guardar_nombre, chat_id)  # Pasamos 'chat_id' como argumento adicional
 
 
-def agregar_edad(chat_id):
+def agregar_direccion(chat_id):  # Cambio de "edad" a "dirección"
     markup = ForceReply()
-    msg = bot.send_message(chat_id, "¿Cuántos años tienes?", reply_markup=markup)
-    bot.register_next_step_handler(msg, guardar_edad, chat_id)  # Pasamos 'chat_id' como argumento adicional
+    msg = bot.send_message(chat_id, "¿Cuál es tu dirección?", reply_markup=markup)  # Cambio de "edad" a "dirección"
+    bot.register_next_step_handler(msg, guardar_direccion, chat_id)  # Pasamos 'chat_id' como argumento adicional
 
 
 def guardar_nombre(message, chat_id):
@@ -101,30 +104,40 @@ def guardar_nombre(message, chat_id):
         usuarios[chat_id] = {}
     usuarios[chat_id]["nombre"] = nombre
     nombres_ingresados.append(chat_id)
-    agregar_edad(chat_id)
+    agregar_direccion(chat_id)  # Cambio de "edad" a "dirección"
 
 
-def guardar_edad(message, chat_id):
-    edad = message.text
+def guardar_direccion(message, chat_id):  # Cambio de "edad" a "dirección"
+    direccion = message.text
     if chat_id not in usuarios:
         usuarios[chat_id] = {}
-    usuarios[chat_id]["edad"] = edad
-    mostrar_menu_pedido(chat_id, usuarios[chat_id]["nombre"], usuarios[chat_id]["edad"])
+    usuarios[chat_id]["direccion"] = direccion
+    mostrar_menu_pedido(chat_id, usuarios[chat_id]["nombre"], usuarios[chat_id]["direccion"])  # Cambio de "edad" a "dirección"
 
 
-def mostrar_menu_pedido(chat_id, nombre, edad):  # Agregamos 'nombre' y 'edad' como argumentos
+def mostrar_menu_pedido(chat_id, nombre, direccion):  # Agregamos 'nombre' y 'direccion' como argumentos
     markup = InlineKeyboardMarkup(row_width=2)
+    buttons = []  # Lista para almacenar los botones de cada fila
+
     for articulo, opciones in menu.items():
         if opciones is None:
-            markup.add(InlineKeyboardButton(articulo, callback_data=articulo))
+            buttons.append(InlineKeyboardButton(articulo, callback_data=articulo))
         else:
-            markup.add(InlineKeyboardButton(articulo, callback_data=articulo))
+            buttons.append(InlineKeyboardButton(articulo, callback_data=articulo))
 
-    # Verificar si el ID de chat ya está en nombres_ingresados
-    if chat_id in nombres_ingresados:
-        mensaje_bienvenida = f"¡Bienvenido {nombre}! A continuación, te muestro las opciones del menú:"
-        bot.send_message(chat_id, mensaje_bienvenida)
-        nombres_ingresados.remove(chat_id)
+        # Si la lista de botones alcanza el tamaño de 2, agregamos los botones a la marca de teclado y reiniciamos la lista
+        if len(buttons) == 2:
+            markup.row(*buttons)  # Agregar los botones de la fila actual a la marca de teclado
+            buttons = []  # Reiniciar la lista para la siguiente fila
+
+    # Agregar los botones restantes si hay algún botón sin emparejar
+    if buttons:
+        markup.row(*buttons)
+
+    # Si el número total de botones es impar, agregar un botón "Finalizar pedido" que abarque todo el espacio
+    if len(menu) % 1 != 0:
+        markup.add(InlineKeyboardButton("Finalizar pedido", callback_data="Finalizar pedido"))
+
 
     bot.send_photo(
         chat_id,
@@ -154,7 +167,7 @@ def obtener_precio_unitario(articulo, opcion=None):
         return menu[articulo]
 
 
-#función para capturar el método de pago
+# Función para capturar el método de pago
 def solicitar_metodo_pago(chat_id):
     markup = InlineKeyboardMarkup(row_width=2)
     markup.add(InlineKeyboardButton("Efectivo", callback_data="metodo_pago:efectivo"))
@@ -165,16 +178,29 @@ def solicitar_metodo_pago(chat_id):
 def guardar_metodo_pago(message, chat_id, message_id):
     metodo_pago = message.text
     usuarios[chat_id]["metodo_pago"] = metodo_pago
-    mostrar_resumen_pedido(chat_id, message_id, usuarios[chat_id]["nombre"], usuarios[chat_id]["edad"], metodo_pago)
+    mostrar_resumen_pedido(chat_id, message_id, usuarios[chat_id]["nombre"], usuarios[chat_id]["direccion"],
+                           metodo_pago)  # Cambio de "edad" a "direccion"
+
+# función para enviar el resumen del pedido a otro canal
+def enviar_resumen_pedido_nuevo_canal(texto):
+    url = f"https://api.telegram.org/bot5885278471:AAFrUUZ15FE0vox8ChgQhYFOaP3CBYQnwwE/sendMessage"
+    payload = {
+        "chat_id": -1001914796946,
+        "text": texto,
+        "parse_mode": "html"
+    }
+    response = requests.post(url, json=payload)
+    if response.status_code != 200:
+        print(f"Error al enviar el mensaje al nuevo canal. Código de estado: {response.status_code}")
 
 
-def mostrar_resumen_pedido(chat_id, message_id, nombre, edad, metodo_pago):  # Añadir el argumento 'metodo_pago'
+def mostrar_resumen_pedido(chat_id, message_id, nombre, direccion, metodo_pago):  # Cambio de "edad" a "direccion"
     datos_usuario = usuarios.get(chat_id, {})
 
     if datos_usuario:
         texto = '-----------   Resumen del pedido   -----------\n\n'
         texto += f'<code>Nombre:</code> {nombre}\n'
-        texto += f'<code>Edad:</code> {edad}\n'
+        texto += f'<code>Dirección:</code> {direccion}\n'  # Cambio de "edad" a "direccion"
         texto += '<code>Pedido:</code>\n\n'
         total = 0
         for articulo, opciones in datos_usuario.get("pedido", {}).items():
@@ -188,7 +214,7 @@ def mostrar_resumen_pedido(chat_id, message_id, nombre, edad, metodo_pago):  # A
         texto += f'<code>Método de Pago:</code> {metodo_pago}\n\n'  # Incluir el método de pago en el texto
         texto += f'\n<code>Tu pedido ha sido solicitado: {nombre}</code>\n'
         bot.send_message(chat_id, texto, reply_to_message_id=message_id, parse_mode="html")
-
+        enviar_resumen_pedido_nuevo_canal(texto)  # Llama a la función y pasa 'texto'
 
 def obtener_articulo_opcion(data):
     parts = data.split(":")
