@@ -6,7 +6,7 @@ import requests
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
-
+    
 usuarios = {}
 nombres_ingresados = []
 
@@ -140,10 +140,11 @@ def mostrar_menu_pedido(chat_id, nombre, direccion):  # Agregamos 'nombre' y 'di
 
 
     bot.send_photo(
-        chat_id,
-        open(card_images.get("Menu", "default.jpg"), "rb"),
-        reply_markup=markup
-    )
+    chat_id,
+    open(card_images.get("Menu", "default.jpg"), "rb"),
+    caption="BIENVENIDO {}! ESTE ES EL MENÚ DE HOY".format(nombre),
+    reply_markup=markup
+)
 
 
 def mostrar_submenu_pedido(chat_id, articulo):
