@@ -3,6 +3,18 @@ Proyecto, chatbot consumiendo la API de telegram y utilizando el lenguaje de pro
 
 ---                 
    
+# Bienvenida del Chat Bot  
+
+<a href="https://postimg.cc/yW7RW0VY" target="_blank"><img src="https://i.postimg.cc/dQyjH9pd/RESTAURANTE2.jpg" alt="RESTAURANTE2"/></a><br/><br/>
+
+# Menú del Chat Bot
+
+<a href="https://postimg.cc/n9V95fdQ" target="_blank"><img src="https://i.postimg.cc/SRCLnyCV/RESTAURANTE.jpg" alt="RESTAURANTE"/></a><br/><br/>
+
+
+--- 
+              
+   
 Tecnologías utilizadas:   
 
 - HTML 
