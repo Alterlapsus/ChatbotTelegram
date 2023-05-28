@@ -13,13 +13,12 @@ Tecnologías utilizadas:
 Descarga de archivos 
 
 - git 
-- git clone https://github.com/Alterlapsus/MyPage.git
+- git clone https://github.com/Alterlapsus/ChatbotTelegram.git
  
 
 ---
   
-Maquetado por: 
+Realizado por: 
 
-- Israel De León  
+-   Trabajo colaborativo (Grupo)
 
-Inspired by devaslife challenge!
